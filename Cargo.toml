@@ -1,6 +1,6 @@
 [package]
 name = "pcg"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Afnan Enayet <afnan.enayet@gmail.com>"]
 
 # Metadata for crates.io
@@ -14,7 +14,7 @@ license = "MIT"
 
 [badges]
 
-travis-ci = { repository = "https://github.com/afnanenayet/pcg-rs", branch = "master" }
+travis-ci = { repository = "afnanenayet/pcg-rs", branch = "master" }
 maintenance = { status = "actively-developed" }
 
 [profile.release]
