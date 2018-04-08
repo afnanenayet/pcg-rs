@@ -15,7 +15,15 @@ pub struct Pcg {
 }
 
 impl Pcg {
-    /// Construct a new PCG state struct with a particular seed
+    /// Constructs a new PCG state struct with a particular seed
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pcg::Pcg;
+    /// 
+    /// let mut rng = Pcg::new(0, 0);
+    /// ```
     pub fn new(seed: u64, seq: u64) -> Pcg {
         let mut rng = Pcg {
             state: 0,
@@ -26,6 +34,15 @@ impl Pcg {
     }
 
     /// Generates a random unsigned 32 bit integer
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pcg::Pcg;
+    ///
+    /// let mut rng = Pcg::default();
+    /// let random_number = rng.rand();
+    /// ```
     pub fn rand(&mut self) -> u32 {
         let old_state = self.state;
         self.state = (Wrapping(old_state) * Wrapping(6364136223846793005) + Wrapping(self.inc)).0;
@@ -38,6 +55,17 @@ impl Pcg {
     }
 
     /// Generates a random unsigned 32 bit integer bounded between 0 and the bound
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pcg::Pcg;
+    ///
+    /// let mut rng = Pcg::default();
+    ///
+    /// // create a random number in the range [0, 10)
+    /// let bounded_random_number = rng.bounded_rand(10);
+    /// ```
     pub fn bounded_rand(&mut self, bound: u32) -> u32 {
         let threshold = (-(bound as i32) % (bound as i32)) as u32;
 
@@ -56,6 +84,14 @@ impl Default for Pcg {
     /// Returns a hardcoded default seed/state for the PCG rng. The values were
     /// taken from [here](https://github.com/imneme/pcg-c-basic/blob/master/pcg_basic.h#L49),
     /// the basic C implementation of PCG.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pcg::Pcg;
+    ///
+    /// let mut rng = Pcg::default();
+    /// ```
     fn default() -> Pcg {
         Pcg {
             state: 0x853c49e6748fea9b,
