@@ -3,7 +3,7 @@ use std::num::Wrapping;
 /// The PCG crate is a port of the C/C++ PCG library for generating random
 /// numbers.
 
-/// The pcg state struct contains the state and the increment factor for the
+/// The `Pcg` state struct contains the state and the increment factor for the
 /// pcg generator. The internals are private and shouldn't be modified by
 /// anything other than the member functions. Note that the random number
 /// generating functions will modify the state of this struct, so you must
@@ -15,13 +15,18 @@ pub struct Pcg {
 }
 
 impl Pcg {
-    /// Constructs a new PCG state struct with a particular seed
+    /// Constructs a new PCG state struct with a particular seed and sequence.
+    ///
+    /// The function returns a struct with state information for the PCG RNG.
+    /// The `seed` param supplies an initial state for the RNG, and the `seq`
+    /// param functionally acts as a stream ID. If you're unsure of which
+    /// params to initialize this struct with, construct the default struct.
     ///
     /// # Examples
     ///
     /// ```
     /// use pcg::Pcg;
-    /// 
+    ///
     /// let mut rng = Pcg::new(0, 0);
     /// ```
     pub fn new(seed: u64, seq: u64) -> Pcg {
@@ -34,6 +39,9 @@ impl Pcg {
     }
 
     /// Generates a random unsigned 32 bit integer
+    ///
+    /// The function generates a random unsignd 32-bit integer that is bounded
+    /// from 0 to `std::u32::MAX`.
     ///
     /// # Examples
     ///
@@ -54,7 +62,11 @@ impl Pcg {
         res as u32
     }
 
-    /// Generates a random unsigned 32 bit integer bounded between 0 and the bound
+    /// Generates a random unsigned 32 bit integer bounded between 0 and the 
+    /// upper `bound`.
+    ///
+    /// The range for the function is [0, `bound`), so every number output by 
+    /// this function will be strictly less than the `bound`).
     ///
     /// # Examples
     ///
@@ -81,7 +93,9 @@ impl Pcg {
 }
 
 impl Default for Pcg {
-    /// Returns a hardcoded default seed/state for the PCG rng. The values were
+    /// Creates a PCG RNG state struct with default values.
+    ///
+    /// Returns a hardcoded default seed/state for the PCG RNG. The values are
     /// taken from [here](https://github.com/imneme/pcg-c-basic/blob/master/pcg_basic.h#L49),
     /// the basic C implementation of PCG.
     ///
