@@ -1,10 +1,12 @@
-use std::num::Wrapping;
-
 /// The PCG crate is a port of the C/C++ PCG library for generating random
 /// numbers.
 
-/// The `Pcg` state struct contains the state and the increment factor for the
-/// pcg generator. The internals are private and shouldn't be modified by
+use std::num::Wrapping;
+
+/// The `Pcg` state struct contains state information for use by the random
+/// number generating functions.
+///
+/// The internals are private and shouldn't be modified by
 /// anything other than the member functions. Note that the random number
 /// generating functions will modify the state of this struct, so you must
 /// initialize `Pcg` as mutable in order to use any of its functionality.
@@ -62,10 +64,10 @@ impl Pcg {
         res as u32
     }
 
-    /// Generates a random unsigned 32 bit integer bounded between 0 and the 
+    /// Generates a random unsigned 32 bit integer bounded between 0 and the
     /// upper `bound`.
     ///
-    /// The range for the function is [0, `bound`), so every number output by 
+    /// The range for the function is [0, `bound`), so every number output by
     /// this function will be strictly less than the `bound`).
     ///
     /// # Examples
