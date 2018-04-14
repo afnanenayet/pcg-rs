@@ -136,10 +136,21 @@ mod tests {
     fn test_bounded_rand() {
         let mut rng = Pcg::default();
         let n = 10000000;
+        let mut v = vec![0 as u32; 10];
 
         for _ in 0..n {
             let rand = rng.bounded_rand(10);
             assert!(rand < 10);
+            v[rand as usize] += 1;
         }
+        print!("{:?}", v);
+
+        let mut v = vec![0 as u32; 2];
+        for _ in 0..n {
+            let rand = rng.bounded_rand(2);
+            assert!(rand < 2);
+            v[rand as usize] += 1;
+        }
+        print!("{:?}", v);
     }
 }
