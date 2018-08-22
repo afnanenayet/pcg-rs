@@ -1,13 +1,12 @@
 /// The PCG crate is a port of the C/C++ PCG library for generating random
 /// numbers.
-
 extern crate rand_core;
 
 #[cfg(test)]
 extern crate rand;
 
+use rand_core::{impls, Error, RngCore};
 use std::num::Wrapping;
-use rand_core::{RngCore, Error, impls};
 
 /// The `Pcg` state struct contains state information for use by the random
 /// number generating functions.
@@ -59,7 +58,9 @@ impl Pcg {
     /// let mut rng = Pcg::default();
     /// let random_number = rng.rand();
     /// ```
-    #[deprecated(since="1.0.0", note="Please use the methods provided by the `Rng` trait instead.")]
+    #[deprecated(
+        since = "1.0.0", note = "Please use the methods provided by the `Rng` trait instead."
+    )]
     pub fn rand(&mut self) -> u32 {
         let old_state = self.state;
         self.state = (Wrapping(old_state) * Wrapping(6364136223846793005) + Wrapping(self.inc)).0;
@@ -88,8 +89,8 @@ impl Pcg {
     /// let bounded_random_number = rng.bounded_rand(10);
     /// ```
     #[deprecated(
-        since = "1.0.0", note =
-        "Please use the `gen_range` or uniform distribution methods provided by the `Rng` trait
+        since = "1.0.0",
+        note = "Please use the `gen_range` or uniform distribution methods provided by the `Rng` trait
         instead."
     )]
     pub fn bounded_rand(&mut self, bound: u32) -> u32 {
