@@ -1,6 +1,6 @@
 [package]
 name = "pcg"
-version = "0.2.0"
+version = "1.0.0"
 authors = ["Afnan Enayet <afnan.enayet@gmail.com>"]
 
 # Metadata for crates.io
@@ -9,6 +9,9 @@ description = "A port of the PCG random number generation library"
 repository = "https://github.com/afnanenayet/pcg-rs"
 readme = "docs/README.md"
 license = "MIT"
+
+[dependencies]
+rand_core = "0.2.1"
 
 # badges
 
