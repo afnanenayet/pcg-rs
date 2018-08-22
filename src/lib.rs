@@ -3,6 +3,9 @@
 
 extern crate rand_core;
 
+#[cfg(test)]
+extern crate rand;
+
 use std::num::Wrapping;
 use rand_core::{RngCore, Error, impls};
 
@@ -84,6 +87,11 @@ impl Pcg {
     /// // create a random number in the range [0, 10)
     /// let bounded_random_number = rng.bounded_rand(10);
     /// ```
+    #[deprecated(
+        since = "1.0.0", note =
+        "Please use the `gen_range` or uniform distribution methods provided by the `Rng` trait
+        instead."
+    )]
     pub fn bounded_rand(&mut self, bound: u32) -> u32 {
         let threshold = (-(bound as i32) % (bound as i32)) as u32;
 
@@ -147,6 +155,17 @@ impl Default for Pcg {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::Rng;
+
+    #[test]
+    fn test_init() {
+        let _rng = Pcg::new(0, 0);
+    }
+
+    #[test]
+    fn test_init_default() {
+        let _rng: Pcg = Default::default();
+    }
 
     #[test]
     /// Checks that there are no runtime errors when generating random numbers
@@ -156,7 +175,7 @@ mod tests {
         let n = 100000000;
 
         for _ in 0..n {
-            let _rand = rng.rand();
+            let _rand = rng.next_u32();
         }
     }
 
@@ -167,7 +186,7 @@ mod tests {
         let mut v = vec![0 as u32; 10];
 
         for _ in 0..n {
-            let rand = rng.bounded_rand(10);
+            let rand = rng.gen_range(0, 10);
             assert!(rand < 10);
             v[rand as usize] += 1;
         }
@@ -175,7 +194,7 @@ mod tests {
 
         let mut v = vec![0 as u32; 2];
         for _ in 0..n {
-            let rand = rng.bounded_rand(2);
+            let rand = rng.gen_range(0, 2);
             assert!(rand < 2);
             v[rand as usize] += 1;
         }
