@@ -1,7 +1,10 @@
 /// The PCG crate is a port of the C/C++ PCG library for generating random
 /// numbers.
 
+extern crate rand_core;
+
 use std::num::Wrapping;
+use rand_core::{RngCore, Error, impls};
 
 /// The `Pcg` state struct contains state information for use by the random
 /// number generating functions.
@@ -53,6 +56,7 @@ impl Pcg {
     /// let mut rng = Pcg::default();
     /// let random_number = rng.rand();
     /// ```
+    #[deprecated(since="1.0.0", note="Please use the methods provided by the `Rng` trait instead.")]
     pub fn rand(&mut self) -> u32 {
         let old_state = self.state;
         self.state = (Wrapping(old_state) * Wrapping(6364136223846793005) + Wrapping(self.inc)).0;
@@ -85,12 +89,36 @@ impl Pcg {
 
         // the loop is guaranteed to terminate
         loop {
-            let r = self.rand();
+            let r = self.next_u32();
 
             if r >= threshold {
                 return r % bound;
             }
         }
+    }
+}
+
+impl RngCore for Pcg {
+    fn next_u32(&mut self) -> u32 {
+        self.next_u64() as u32
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        let old_state = self.state;
+        self.state = (Wrapping(old_state) * Wrapping(6364136223846793005) + Wrapping(self.inc)).0;
+        let xor_shifted = (old_state >> 18) ^ old_state >> 27;
+        // need to cast to i64 to allow the `-` operator (casting between integers of
+        // the same size is a no-op)
+        let rot = (old_state >> 59) as i64;
+        (xor_shifted >> rot as u64) | (xor_shifted << ((-rot) & 31))
+    }
+
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        impls::fill_bytes_via_next(self, dest)
+    }
+
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
+        Ok(self.fill_bytes(dest))
     }
 }
 
