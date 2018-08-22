@@ -42,7 +42,7 @@ impl Pcg {
             inc: (seq << 1) | 1,
         };
         rng.state += seed;
-        return rng;
+        rng
     }
 
     /// Generates a random unsigned 32 bit integer
