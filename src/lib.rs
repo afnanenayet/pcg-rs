@@ -1,5 +1,25 @@
-/// The PCG crate is a port of the C/C++ PCG library for generating random
-/// numbers.
+//! # Synopsis
+//!
+//! The PCG crate is a port of the C/C++ PCG library for generating random
+//! numbers. It implements the `Rng` trait so all of the standard Rust methods
+//! for generating random numbers are available.
+//!
+//! _Note: you must use the `rand` crate if you want to use the methods provided
+//! by the `Rng` crate._
+//!
+//! # Basic Usage
+//!
+//! ```
+//! # extern crate rand;
+//! # extern crate pcg;
+//!
+//! use rand::Rng;
+//! use pcg::Pcg;
+//!
+//! let mut rng: Pcg = Default::default();  // remember to make this mutable
+//! let x: f64 = rng.gen();  // "canonical" random number in the range [0, 1)
+//! ```
+
 extern crate rand_core;
 
 #[cfg(test)]
