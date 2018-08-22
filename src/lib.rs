@@ -12,7 +12,6 @@
 //! ```
 //! # extern crate rand;
 //! # extern crate pcg;
-//!
 //! use rand::Rng;
 //! use pcg::Pcg;
 //!
@@ -25,6 +24,9 @@ extern crate rand_core;
 #[cfg(test)]
 extern crate rand;
 
+mod consts;
+
+use consts::{INCREMENTOR, INIT_INC, INIT_STATE};
 use rand_core::{impls, Error, RngCore};
 use std::num::Wrapping;
 
@@ -83,7 +85,7 @@ impl Pcg {
     )]
     pub fn rand(&mut self) -> u32 {
         let old_state = self.state;
-        self.state = (Wrapping(old_state) * Wrapping(6364136223846793005) + Wrapping(self.inc)).0;
+        self.state = (Wrapping(old_state) * Wrapping(INCREMENTOR) + Wrapping(self.inc)).0;
         let xor_shifted = (old_state >> 18) ^ old_state >> 27;
         // need to cast to i64 to allow the `-` operator (casting between integers of
         // the same size is a no-op)
@@ -134,8 +136,9 @@ impl RngCore for Pcg {
 
     fn next_u64(&mut self) -> u64 {
         let old_state = self.state;
-        self.state = (Wrapping(old_state) * Wrapping(6364136223846793005) + Wrapping(self.inc)).0;
+        self.state = (Wrapping(old_state) * Wrapping(INCREMENTOR) + Wrapping(self.inc)).0;
         let xor_shifted = (old_state >> 18) ^ old_state >> 27;
+
         // need to cast to i64 to allow the `-` operator (casting between integers of
         // the same size is a no-op)
         let rot = (old_state >> 59) as i64;
@@ -167,8 +170,8 @@ impl Default for Pcg {
     /// ```
     fn default() -> Pcg {
         Pcg {
-            state: 0x853c49e6748fea9b,
-            inc: 0xda3e39cb94b95bdb,
+            state: INIT_STATE,
+            inc: INIT_INC,
         }
     }
 }
