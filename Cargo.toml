@@ -11,7 +11,7 @@ readme = "docs/README.md"
 license = "MIT"
 
 [dependencies]
-rand_core = "0.2.1"
+rand_core = "0.3.0"
 
 [dev-dependencies]
 rand = "0.5.5"
