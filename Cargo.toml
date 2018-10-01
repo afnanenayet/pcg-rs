@@ -1,6 +1,6 @@
 [package]
 name = "pcg"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Afnan Enayet <afnan.enayet@gmail.com>"]
 
 # Metadata for crates.io
