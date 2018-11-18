@@ -19,14 +19,12 @@
 //! let x: f64 = rng.gen();  // "canonical" random number in the range [0, 1)
 //! ```
 
-extern crate rand_core;
-
 #[cfg(test)]
 extern crate rand;
 
 mod consts;
 
-use consts::{INCREMENTOR, INIT_INC, INIT_STATE};
+use self::consts::{INCREMENTOR, INIT_INC, INIT_STATE};
 use rand_core::{impls, Error, RngCore};
 use std::num::Wrapping;
 
@@ -81,7 +79,8 @@ impl Pcg {
     /// let random_number = rng.rand();
     /// ```
     #[deprecated(
-        since = "1.0.0", note = "Please use the methods provided by the `Rng` trait instead."
+        since = "1.0.0",
+        note = "Please use the methods provided by the `Rng` trait instead."
     )]
     pub fn rand(&mut self) -> u32 {
         let old_state = self.state;
