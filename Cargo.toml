@@ -2,6 +2,7 @@
 name = "pcg"
 version = "1.0.1"
 authors = ["Afnan Enayet <afnan.enayet@gmail.com>"]
+# edition = "2018"
 
 # Metadata for crates.io
 
