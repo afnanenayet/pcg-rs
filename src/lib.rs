@@ -1,32 +1,27 @@
 //! # Synopsis
 //!
 //! The PCG crate is a port of the C/C++ PCG library for generating random
-//! numbers. It implements the `Rng` trait so all of the standard Rust methods
+//! numbers. It implements the `RngCore` trait so all of the standard Rust methods
 //! for generating random numbers are available.
 //!
 //! _Note: you must use the `rand` crate if you want to use the methods provided
-//! by the `Rng` crate._
-//!
-//! # Basic Usage
-//!
-//! ```
-//! # extern crate rand;
-//! # extern crate pcg;
-//! use rand::Rng;
-//! use pcg::Pcg;
-//!
-//! let mut rng: Pcg = Default::default();  // remember to make this mutable
-//! let x: f64 = rng.gen();  // "canonical" random number in the range [0, 1)
-//! ```
-
-#[cfg(test)]
-extern crate rand;
+//! by the `Rng` trait._
 
 mod consts;
 
 use self::consts::{INCREMENTOR, INIT_INC, INIT_STATE};
-use rand_core::{impls, Error, RngCore};
+#[cfg(test)]
+use rand;
+use rand_core::{impls, Error, RngCore, SeedableRng};
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::num::Wrapping;
+
+#[cfg(feature = "serialize")]
+use serde;
+
+#[cfg(feature = "serialize")]
+use serde_derive::{Deserialize, Serialize};
 
 /// The `Pcg` state struct contains state information for use by the random
 /// number generating functions.
@@ -35,7 +30,8 @@ use std::num::Wrapping;
 /// anything other than the member functions. Note that the random number
 /// generating functions will modify the state of this struct, so you must
 /// initialize `Pcg` as mutable in order to use any of its functionality.
-#[derive(Debug)]
+#[derive(Debug, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub struct Pcg {
     state: u64,
     inc: u64,
@@ -64,68 +60,6 @@ impl Pcg {
         rng.state += seed;
         rng
     }
-
-    /// Generates a random unsigned 32 bit integer
-    ///
-    /// The function generates a random unsignd 32-bit integer that is bounded
-    /// from 0 to `std::u32::MAX`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use pcg::Pcg;
-    ///
-    /// let mut rng = Pcg::default();
-    /// let random_number = rng.rand();
-    /// ```
-    #[deprecated(
-        since = "1.0.0",
-        note = "Please use the methods provided by the `Rng` trait instead."
-    )]
-    pub fn rand(&mut self) -> u32 {
-        let old_state = self.state;
-        self.state = (Wrapping(old_state) * Wrapping(INCREMENTOR) + Wrapping(self.inc)).0;
-        let xor_shifted = (old_state >> 18) ^ old_state >> 27;
-        // need to cast to i64 to allow the `-` operator (casting between integers of
-        // the same size is a no-op)
-        let rot = (old_state >> 59) as i64;
-        let res = (xor_shifted >> rot as u64) | (xor_shifted << ((-rot) & 31));
-        res as u32
-    }
-
-    /// Generates a random unsigned 32 bit integer bounded between 0 and the
-    /// upper `bound`.
-    ///
-    /// The range for the function is [0, `bound`), so every number output by
-    /// this function will be strictly less than the `bound`).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use pcg::Pcg;
-    ///
-    /// let mut rng = Pcg::default();
-    ///
-    /// // create a random number in the range [0, 10)
-    /// let bounded_random_number = rng.bounded_rand(10);
-    /// ```
-    #[deprecated(
-        since = "1.0.0",
-        note = "Please use the `gen_range` or uniform distribution methods provided by the `Rng` trait
-        instead."
-    )]
-    pub fn bounded_rand(&mut self, bound: u32) -> u32 {
-        let threshold = (-(bound as i32) % (bound as i32)) as u32;
-
-        // the loop is guaranteed to terminate
-        loop {
-            let r = self.next_u32();
-
-            if r >= threshold {
-                return r % bound;
-            }
-        }
-    }
 }
 
 impl RngCore for Pcg {
@@ -153,74 +87,49 @@ impl RngCore for Pcg {
     }
 }
 
-impl Default for Pcg {
-    /// Creates a PCG RNG state struct with default values.
-    ///
-    /// Returns a hardcoded default seed/state for the PCG RNG. The values are
-    /// taken from [here](https://github.com/imneme/pcg-c-basic/blob/master/pcg_basic.h#L49),
-    /// the basic C implementation of PCG.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use pcg::Pcg;
-    ///
-    /// let mut rng = Pcg::default();
-    /// ```
-    fn default() -> Pcg {
-        Pcg {
-            state: INIT_STATE,
-            inc: INIT_INC,
-        }
+const N: usize = 64;
+
+pub struct PcgSeed(pub [u8; N]);
+
+impl Default for PcgSeed {
+    fn default() -> Self {
+        Self([0; N])
+    }
+}
+
+impl AsMut<[u8]> for PcgSeed {
+    fn as_mut(&mut self) -> &mut [u8] {
+        &mut self.0
+    }
+}
+
+impl Hash for PcgSeed {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // create a vector from the array
+        let seed_vec: Vec<u8> = self.0.iter().cloned().collect();
+        seed_vec.hash(state)
+    }
+}
+
+impl SeedableRng for Pcg {
+    type Seed = PcgSeed;
+
+    fn from_seed(seed: Self::Seed) -> Pcg {
+        // Hash the value of the seed to a u64 so it's usable with Pcg
+        let mut s = DefaultHasher::new();
+        seed.0.hash(&mut s);
+        let hashed_seed: u64 = s.finish();
+        Pcg::new(hashed_seed, 0)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::Rng;
+    use rand::prelude::*;
 
     #[test]
     fn test_init() {
         let _rng = Pcg::new(0, 0);
-    }
-
-    #[test]
-    fn test_init_default() {
-        let _rng: Pcg = Default::default();
-    }
-
-    #[test]
-    /// Checks that there are no runtime errors when generating random numbers
-    /// (such as rust complaining about integer overflow ops)
-    fn test_rand() {
-        let mut rng = Pcg::default();
-        let n = 100000000;
-
-        for _ in 0..n {
-            let _rand = rng.next_u32();
-        }
-    }
-
-    #[test]
-    fn test_bounded_rand() {
-        let mut rng = Pcg::default();
-        let n = 10000000;
-        let mut v = vec![0 as u32; 10];
-
-        for _ in 0..n {
-            let rand = rng.gen_range(0, 10);
-            assert!(rand < 10);
-            v[rand as usize] += 1;
-        }
-        print!("{:?}", v);
-
-        let mut v = vec![0 as u32; 2];
-        for _ in 0..n {
-            let rand = rng.gen_range(0, 2);
-            assert!(rand < 2);
-            v[rand as usize] += 1;
-        }
-        print!("{:?}", v);
     }
 }
