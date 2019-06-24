@@ -1,6 +1,9 @@
 # pcg-rs
 
 [![Build Status](https://travis-ci.org/afnanenayet/pcg-rs.svg?branch=master)](https://travis-ci.org/afnanenayet/pcg-rs)
+[![crates badge](https://meritbadge.herokuapp.com/pcg)](https://crates.io/crates/pcg)
+[![Documentation](https://docs.rs/pcg/badge.svg)](https://docs.rs/pcg)
+![License](https://img.shields.io/crates/l/pcg/3.0.0.svg)
 
 ## Synopsis
 
