@@ -1,6 +1,6 @@
 [package]
 name = "pcg"
-version = "3.0.0"
+version = "3.0.1"
 authors = ["Afnan Enayet <afnan.enayet@gmail.com>"]
 edition = "2018"
 description = "A port of the PCG random number generation library"
