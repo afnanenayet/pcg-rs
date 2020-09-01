@@ -23,7 +23,6 @@
 
 use crate::consts::{INCREMENTOR, INIT_INC, INIT_STATE};
 use rand_core::{impls, Error, RngCore, SeedableRng};
-use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::num::Wrapping;
 
@@ -109,12 +108,15 @@ impl RngCore for Pcg {
     }
 }
 
-const N: usize = 64;
+const N: usize = 8;
 
 /// A wrapper type for the PcgSeed
 ///
-/// This type allows us to implement the seedable RNG type for the `Pcg` struct
+/// This wrapper allows us to implement a `SeedableRng` for `Pcg`.
 pub struct PcgSeed(pub [u8; N]);
+
+/// A bit mask for u8
+const MASK: u8 = 0b11111111;
 
 impl Default for PcgSeed {
     fn default() -> Self {
@@ -136,15 +138,30 @@ impl Hash for PcgSeed {
     }
 }
 
+impl From<u64> for PcgSeed {
+    fn from(init: u64) -> Self {
+        let mut seed: [u8; N] = [0; N];
+
+        for i in 0..N {
+            let shift_factor = i * 8;
+            let section = (init >> shift_factor) as u8;
+            seed[0] = section & MASK
+        }
+        PcgSeed(seed)
+    }
+}
+
 impl SeedableRng for Pcg {
     type Seed = PcgSeed;
 
     fn from_seed(seed: Self::Seed) -> Pcg {
-        // Hash the value of the seed to a u64 so it's usable with Pcg
-        let mut s = DefaultHasher::new();
-        seed.0.hash(&mut s);
-        let hashed_seed: u64 = s.finish();
-        Pcg::new(hashed_seed, 0)
+        let mut seed_bytes: u64 = 0;
+
+        // Iterate through each set of 8 bytes to fill in a section of the seed
+        for (i, byte) in seed.0.iter().enumerate() {
+            seed_bytes |= (byte << (i * 8)) as u64;
+        }
+        Pcg::new(seed_bytes, INIT_INC)
     }
 }
 
