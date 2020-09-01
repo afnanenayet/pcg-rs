@@ -9,7 +9,7 @@
 
 mod consts;
 
-use self::consts::{INCREMENTOR, INIT_INC, INIT_STATE};
+use crate::consts::{INCREMENTOR, INIT_INC, INIT_STATE};
 #[cfg(test)]
 use rand;
 use rand_core::{impls, Error, RngCore, SeedableRng};
