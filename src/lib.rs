@@ -112,7 +112,8 @@ impl RngCore for Pcg {
     }
 
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        Ok(self.fill_bytes(dest))
+        self.fill_bytes(dest);
+        Ok(())
     }
 }
 
@@ -144,8 +145,8 @@ impl AsMut<[u8]> for PcgSeed {
 impl Hash for PcgSeed {
     fn hash<H: Hasher>(&self, state: &mut H) {
         // create a vector from the array
-        let seed_vec: Vec<u8> = self.0.iter().cloned().collect();
-        seed_vec.hash(state)
+        let seed_vec = self.0.to_vec();
+        seed_vec.hash(state);
     }
 }
 
@@ -156,7 +157,7 @@ impl From<u64> for PcgSeed {
         for i in 0..N {
             let shift_factor = i * 8;
             let section = (init >> shift_factor) as u8;
-            seed[0] = section & MASK
+            seed[0] = section & MASK;
         }
         PcgSeed(seed)
     }
