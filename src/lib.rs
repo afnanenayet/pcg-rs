@@ -2,16 +2,26 @@
 //!
 //! The PCG crate is a port of the C/C++ PCG library for generating random
 //! numbers. It implements the `RngCore` trait so all of the standard Rust methods
-//! for generating random numbers are available.
+//! for generating random numbers are available. You can find a reference on the methods provided
+//! by the `Rng` trait here: https://rust-random.github.io/rand/rand/trait.Rng.html
 //!
 //! _Note: you must use the `rand` crate if you want to use the methods provided
 //! by the `Rng` trait._
-
-mod consts;
+//!
+//! ```
+//! use rand::prelude::*;
+//! use pcg::Pcg;
+//!
+//! // Create the PCG struct with state
+//! let mut pcg = Pcg::default();
+//!
+//! // Generate arbitrary random values
+//! let mut some_bool: bool = pcg.gen();
+//! let mut some_f32: f32 = pcg.gen();
+//! let mut some_u32: u32 = pcg.gen();
+//! ```
 
 use crate::consts::{INCREMENTOR, INIT_INC, INIT_STATE};
-#[cfg(test)]
-use rand;
 use rand_core::{impls, Error, RngCore, SeedableRng};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -22,6 +32,8 @@ use serde;
 
 #[cfg(feature = "serialize")]
 use serde_derive::{Deserialize, Serialize};
+
+mod consts;
 
 /// The `Pcg` state struct contains state information for use by the random
 /// number generating functions.
@@ -40,10 +52,13 @@ pub struct Pcg {
 impl Pcg {
     /// Constructs a new PCG state struct with a particular seed and sequence.
     ///
-    /// The function returns a struct with state information for the PCG RNG.
-    /// The `seed` param supplies an initial state for the RNG, and the `seq`
-    /// param functionally acts as a stream ID. If you're unsure of which
-    /// params to initialize this struct with, construct the default struct.
+    /// The function returns a struct with state information for the PCG RNG.  The `seed` param
+    /// supplies an initial state for the RNG, and the `seq` param functionally acts as a stream
+    /// ID. If you're unsure of which params to initialize this struct with, construct the default
+    /// struct.
+    ///
+    /// If you can't think of a seed and a state to initialize this with, just use the default
+    /// struct.
     ///
     /// # Examples
     ///
@@ -53,12 +68,19 @@ impl Pcg {
     /// let mut rng = Pcg::new(0, 0);
     /// ```
     pub fn new(seed: u64, seq: u64) -> Pcg {
-        let mut rng = Pcg {
-            state: 0,
+        Pcg {
+            state: seed,
             inc: (seq << 1) | 1,
-        };
-        rng.state += seed;
-        rng
+        }
+    }
+}
+
+impl Default for Pcg {
+    fn default() -> Self {
+        Pcg {
+            state: INIT_STATE,
+            inc: INIT_INC,
+        }
     }
 }
 
@@ -89,6 +111,9 @@ impl RngCore for Pcg {
 
 const N: usize = 64;
 
+/// A wrapper type for the PcgSeed
+///
+/// This type allows us to implement the seedable RNG type for the `Pcg` struct
 pub struct PcgSeed(pub [u8; N]);
 
 impl Default for PcgSeed {
@@ -126,7 +151,6 @@ impl SeedableRng for Pcg {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::prelude::*;
 
     #[test]
     fn test_init() {
