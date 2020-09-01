@@ -2,18 +2,27 @@
 //!
 //! The PCG crate is a port of the C/C++ PCG library for generating random
 //! numbers. It implements the `RngCore` trait so all of the standard Rust methods
-//! for generating random numbers are available.
+//! for generating random numbers are available. You can find a reference on the methods provided
+//! by the `Rng` trait here: https://rust-random.github.io/rand/rand/trait.Rng.html
 //!
 //! _Note: you must use the `rand` crate if you want to use the methods provided
 //! by the `Rng` trait._
+//!
+//! ```
+//! use rand::prelude::*;
+//! use pcg::Pcg;
+//!
+//! // Create the PCG struct with state
+//! let mut pcg = Pcg::default();
+//!
+//! // Generate arbitrary random values
+//! let mut some_bool: bool = pcg.gen();
+//! let mut some_f32: f32 = pcg.gen();
+//! let mut some_u32: u32 = pcg.gen();
+//! ```
 
-mod consts;
-
-use self::consts::{INCREMENTOR, INIT_INC, INIT_STATE};
-#[cfg(test)]
-use rand;
+use crate::consts::{INCREMENTOR, INIT_INC, INIT_STATE};
 use rand_core::{impls, Error, RngCore, SeedableRng};
-use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::num::Wrapping;
 
@@ -22,6 +31,8 @@ use serde;
 
 #[cfg(feature = "serialize")]
 use serde_derive::{Deserialize, Serialize};
+
+mod consts;
 
 /// The `Pcg` state struct contains state information for use by the random
 /// number generating functions.
@@ -40,10 +51,13 @@ pub struct Pcg {
 impl Pcg {
     /// Constructs a new PCG state struct with a particular seed and sequence.
     ///
-    /// The function returns a struct with state information for the PCG RNG.
-    /// The `seed` param supplies an initial state for the RNG, and the `seq`
-    /// param functionally acts as a stream ID. If you're unsure of which
-    /// params to initialize this struct with, construct the default struct.
+    /// The function returns a struct with state information for the PCG RNG.  The `seed` param
+    /// supplies an initial state for the RNG, and the `seq` param functionally acts as a stream
+    /// ID. If you're unsure of which params to initialize this struct with, construct the default
+    /// struct.
+    ///
+    /// If you can't think of a seed and a state to initialize this with, just use the default
+    /// struct.
     ///
     /// # Examples
     ///
@@ -53,12 +67,19 @@ impl Pcg {
     /// let mut rng = Pcg::new(0, 0);
     /// ```
     pub fn new(seed: u64, seq: u64) -> Pcg {
-        let mut rng = Pcg {
-            state: 0,
+        Pcg {
+            state: seed,
             inc: (seq << 1) | 1,
-        };
-        rng.state += seed;
-        rng
+        }
+    }
+}
+
+impl Default for Pcg {
+    fn default() -> Self {
+        Pcg {
+            state: INIT_STATE,
+            inc: INIT_INC,
+        }
     }
 }
 
@@ -87,9 +108,15 @@ impl RngCore for Pcg {
     }
 }
 
-const N: usize = 64;
+const N: usize = 8;
 
+/// A wrapper type for the PcgSeed
+///
+/// This wrapper allows us to implement a `SeedableRng` for `Pcg`.
 pub struct PcgSeed(pub [u8; N]);
+
+/// A bit mask for u8
+const MASK: u8 = 0b11111111;
 
 impl Default for PcgSeed {
     fn default() -> Self {
@@ -111,22 +138,36 @@ impl Hash for PcgSeed {
     }
 }
 
+impl From<u64> for PcgSeed {
+    fn from(init: u64) -> Self {
+        let mut seed: [u8; N] = [0; N];
+
+        for i in 0..N {
+            let shift_factor = i * 8;
+            let section = (init >> shift_factor) as u8;
+            seed[0] = section & MASK
+        }
+        PcgSeed(seed)
+    }
+}
+
 impl SeedableRng for Pcg {
     type Seed = PcgSeed;
 
     fn from_seed(seed: Self::Seed) -> Pcg {
-        // Hash the value of the seed to a u64 so it's usable with Pcg
-        let mut s = DefaultHasher::new();
-        seed.0.hash(&mut s);
-        let hashed_seed: u64 = s.finish();
-        Pcg::new(hashed_seed, 0)
+        let mut seed_bytes: u64 = 0;
+
+        // Iterate through each set of 8 bytes to fill in a section of the seed
+        for (i, byte) in seed.0.iter().enumerate() {
+            seed_bytes |= (byte << (i * 8)) as u64;
+        }
+        Pcg::new(seed_bytes, INIT_INC)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::prelude::*;
 
     #[test]
     fn test_init() {
