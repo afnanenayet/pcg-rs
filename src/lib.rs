@@ -136,6 +136,7 @@ pub struct PcgSeed(pub [u8; N]);
 ///
 /// This enables, amongst other things, conversions from `u64` to `PcgSeed`.
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct U64(pub u64);
 
 /// A bit mask for u8
