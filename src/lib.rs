@@ -22,15 +22,12 @@
 //! ```
 
 use crate::consts::{INCREMENTOR, INIT_INC, INIT_STATE};
+use core::hash::{Hash, Hasher};
+use core::num::Wrapping;
 use rand_core::{impls, Error, RngCore, SeedableRng};
-use std::hash::{Hash, Hasher};
-use std::num::Wrapping;
 
-#[cfg(feature = "serialize")]
-use serde;
-
-#[cfg(feature = "serialize")]
-use serde_derive::{Deserialize, Serialize};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 mod consts;
 
@@ -42,7 +39,7 @@ mod consts;
 /// generating functions will modify the state of this struct, so you must
 /// initialize `Pcg` as mutable in order to use any of its functionality.
 #[derive(Debug, Clone, Eq, PartialEq)]
-#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Pcg {
     state: u64,
     inc: u64,
@@ -108,11 +105,14 @@ impl RngCore for Pcg {
     }
 }
 
+/// The number of 8-bit buckets that the seed is made of
 const N: usize = 8;
 
 /// A wrapper type for the PcgSeed
 ///
 /// This wrapper allows us to implement a `SeedableRng` for `Pcg`.
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PcgSeed(pub [u8; N]);
 
 /// A bit mask for u8
