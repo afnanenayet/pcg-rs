@@ -122,13 +122,41 @@ const N: usize = 8;
 
 /// A wrapper type for the PcgSeed
 ///
-/// This wrapper allows us to implement a `SeedableRng` for `Pcg`.
+/// This wrapper allows us to implement a `SeedableRng` for `Pcg`. There are also conversion traits
+/// defined so that you can switch between `PcgSeed` and `U64` easily. The lowest bit in the lowest
+/// index of the underlying array corresponds to the most significant bit in the converted `U64`.
+///
+/// For example: `[0, 1, 2, 3, 4, 5, 6, 7]` corresponds to `01234567` when converted to the packged
+/// unsigned integer representation.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PcgSeed(pub [u8; N]);
 
+/// A wrapper type for u64 so we can define methods on a built-in primitive
+///
+/// This enables, amongst other things, conversions from `u64` to `PcgSeed`.
+pub struct U64(pub u64);
+
 /// A bit mask for u8
 const MASK: u8 = 0b11111111;
+
+impl From<PcgSeed> for U64 {
+    fn from(seed: PcgSeed) -> Self {
+        let mut res: u64 = 0;
+
+        // We iterate through the array of bytes, packing them into a u64 by filling in a
+        // byte-sized section at a time
+        for (i, byte) in seed.0.iter().enumerate() {
+            // We have to subtract from the index because the 0th index of the array corresponds to
+            // the most significant bit (MSB). If the array is [0, 1, 2, 3], we want the resulting
+            // integer to look like 0123.
+            let shift_up = N - i - 1;
+            let block = (byte << shift_up) as u64;
+            res |= block;
+        }
+        U64(res)
+    }
+}
 
 impl Default for PcgSeed {
     fn default() -> Self {
@@ -155,11 +183,17 @@ impl From<u64> for PcgSeed {
         let mut seed: [u8; N] = [0; N];
 
         for i in 0..N {
-            let shift_factor = i * 8;
+            let shift_factor = (N - i - 1) * 8;
             let section = (init >> shift_factor) as u8;
-            seed[0] = section & MASK;
+            seed[i] = section & MASK;
         }
         PcgSeed(seed)
+    }
+}
+
+impl From<U64> for PcgSeed {
+    fn from(init: U64) -> Self {
+        init.0.into()
     }
 }
 
@@ -167,13 +201,7 @@ impl SeedableRng for Pcg {
     type Seed = PcgSeed;
 
     fn from_seed(seed: Self::Seed) -> Pcg {
-        let mut seed_bytes: u64 = 0;
-
-        // Iterate through each set of 8 bytes to fill in a section of the seed
-        for (i, byte) in seed.0.iter().enumerate() {
-            seed_bytes |= (byte << (i * 8)) as u64;
-        }
-        Pcg::new(seed_bytes, INIT_INC)
+        Pcg::new(U64::from(seed).0, INIT_INC)
     }
 }
 
