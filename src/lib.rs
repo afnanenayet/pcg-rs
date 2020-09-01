@@ -22,8 +22,19 @@
 //! ```
 
 use crate::consts::{INCREMENTOR, INIT_INC, INIT_STATE};
-use core::hash::{Hash, Hasher};
-use core::num::Wrapping;
+
+#[cfg(feature = "std")]
+use std::{
+    hash::{Hash, Hasher},
+    num::Wrapping,
+};
+
+#[cfg(not(feature = "std"))]
+use core::{
+    hash::{Hash, Hasher},
+    num::Wrapping,
+};
+
 use rand_core::{impls, Error, RngCore, SeedableRng};
 
 #[cfg(feature = "serde")]
